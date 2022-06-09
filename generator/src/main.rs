@@ -3,6 +3,8 @@ use color_eyre::Result;
 use generator::{Api, GlProfile, GlRegistry};
 use std::{fs, path::PathBuf};
 
+const GL_XML: &str = include_str!("OpenGL-Registry/xml/gl.xml");
+
 /// A generator
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -42,7 +44,7 @@ fn main() -> Result<()> {
         )?
         .text()?
     } else {
-        generator::GL_XML.to_string()
+        GL_XML.to_string()
     };
 
     let mut gl_registry = GlRegistry::parse(&xml)?;

@@ -2,9 +2,6 @@ use itertools::Itertools;
 use roxmltree::Document;
 use std::{collections::HashSet, fmt::Display, str::FromStr};
 
-/// OpenGL registry file exported as a constant. Last fetched from https://github.com/KhronosGroup/OpenGL-Registry/raw/main/xml/gl.xml on 22/05/2022
-pub const GL_XML: &str = include_str!("gl.xml");
-
 /// A list of all keywords reserved by the language.
 const KEYWORDS: [&str; 51] = [
     "as", "break", "const", "continue", "crate", "else", "enum", "extern", "false", "fn", "for",
