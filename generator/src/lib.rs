@@ -426,6 +426,89 @@ impl GlRegistry {
     }
 }
 
+impl GlRegistry {
+    pub const fn types() -> &'static str {
+        r#"use std::os::raw::*;
+        pub type GLvoid = c_void;
+        pub type GLbyte = c_char;
+        pub type GLubyte = c_uchar;
+        pub type GLchar = c_char;
+        pub type GLboolean = c_uchar;
+        pub type GLshort = c_short;
+        pub type GLushort = c_ushort;
+        pub type GLint = c_int;
+        pub type GLuint = c_uint;
+        pub type GLint64 = i64;
+        pub type GLuint64 = u64;
+        pub type GLintptr = isize;
+        pub type GLsizeiptr = isize;
+        pub type GLintptrARB = isize;
+        pub type GLsizeiptrARB = isize;
+        pub type GLint64EXT = i64;
+        pub type GLuint64EXT = u64;
+        pub type GLsizei = GLint;
+        pub type GLclampx = c_int;
+        pub type GLfixed = GLint;
+        pub type GLhalf = c_ushort;
+        pub type GLhalfNV = c_ushort;
+        pub type GLhalfARB = c_ushort;
+        pub type GLenum = c_uint;
+        pub type GLbitfield = c_uint;
+        pub type GLfloat = c_float;
+        pub type GLdouble = c_double;
+        pub type GLclampf = c_float;
+        pub type GLclampd = c_double;
+        pub type GLcharARB = c_char;
+        #[cfg(target_os = "macos")]
+        pub type GLhandleARB = *const c_void;
+        #[cfg(not(target_os = "macos"))]
+        pub type GLhandleARB = c_uint;
+        pub enum __GLsync {{}}
+        pub type GLsync = *const __GLsync;
+        pub enum _cl_context {{}}
+        pub enum _cl_event {{}}
+        pub type GLvdpauSurfaceNV = GLintptr;
+        pub type GLeglClientBufferEXT = *const c_void;
+        pub type GLeglImageOES = *const c_void;
+        pub type GLDEBUGPROC = extern "system" fn(
+            source: GLenum,
+            type_: GLenum,
+            id: GLuint,
+            severity: GLenum,
+            length: GLsizei,
+            message: *const GLchar,
+            userParam: *mut c_void,
+        );
+        pub type GLDEBUGPROCARB = extern "system" fn(
+            source: GLenum,
+            type_: GLenum,
+            id: GLuint,
+            severity: GLenum,
+            length: GLsizei,
+            message: *const GLchar,
+            userParam: *mut c_void,
+        );
+        pub type GLDEBUGPROCKHR = extern "system" fn(
+            source: GLenum,
+            type_: GLenum,
+            id: GLuint,
+            severity: GLenum,
+            length: GLsizei,
+            message: *const GLchar,
+            userParam: *mut GLvoid,
+        );
+        pub type GLDEBUGPROCAMD = extern "system" fn(
+            id: GLuint,
+            category: GLenum,
+            severity: GLenum,
+            length: GLsizei,
+            message: *const GLchar,
+            userParam: *mut GLvoid,
+        );
+        pub type GLVULKANPROCNV = extern "system" fn();"#
+    }
+}
+
 impl Display for GlRegistry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let formated_enums = &self.gl_enums.iter().format_with("\n", |gl_enum, f| {
@@ -561,84 +644,7 @@ impl Display for LoadError {{
 
 pub use types::*;
 pub mod types {{
-    use std::os::raw::*;
-    pub type GLvoid = c_void;
-    pub type GLbyte = c_char;
-    pub type GLubyte = c_uchar;
-    pub type GLchar = c_char;
-    pub type GLboolean = c_uchar;
-    pub type GLshort = c_short;
-    pub type GLushort = c_ushort;
-    pub type GLint = c_int;
-    pub type GLuint = c_uint;
-    pub type GLint64 = i64;
-    pub type GLuint64 = u64;
-    pub type GLintptr = isize;
-    pub type GLsizeiptr = isize;
-    pub type GLintptrARB = isize;
-    pub type GLsizeiptrARB = isize;
-    pub type GLint64EXT = i64;
-    pub type GLuint64EXT = u64;
-    pub type GLsizei = GLint;
-    pub type GLclampx = c_int;
-    pub type GLfixed = GLint;
-    pub type GLhalf = c_ushort;
-    pub type GLhalfNV = c_ushort;
-    pub type GLhalfARB = c_ushort;
-    pub type GLenum = c_uint;
-    pub type GLbitfield = c_uint;
-    pub type GLfloat = c_float;
-    pub type GLdouble = c_double;
-    pub type GLclampf = c_float;
-    pub type GLclampd = c_double;
-    pub type GLcharARB = c_char;
-    #[cfg(target_os = "macos")]
-    pub type GLhandleARB = *const c_void;
-    #[cfg(not(target_os = "macos"))]
-    pub type GLhandleARB = c_uint;
-    pub enum __GLsync {{}}
-    pub type GLsync = *const __GLsync;
-    pub enum _cl_context {{}}
-    pub enum _cl_event {{}}
-    pub type GLvdpauSurfaceNV = GLintptr;
-    pub type GLeglClientBufferEXT = *const c_void;
-    pub type GLeglImageOES = *const c_void;
-    pub type GLDEBUGPROC = extern "system" fn(
-        source: GLenum,
-        type_: GLenum,
-        id: GLuint,
-        severity: GLenum,
-        length: GLsizei,
-        message: *const GLchar,
-        userParam: *mut c_void,
-    );
-    pub type GLDEBUGPROCARB = extern "system" fn(
-        source: GLenum,
-        type_: GLenum,
-        id: GLuint,
-        severity: GLenum,
-        length: GLsizei,
-        message: *const GLchar,
-        userParam: *mut c_void,
-    );
-    pub type GLDEBUGPROCKHR = extern "system" fn(
-        source: GLenum,
-        type_: GLenum,
-        id: GLuint,
-        severity: GLenum,
-        length: GLsizei,
-        message: *const GLchar,
-        userParam: *mut GLvoid,
-    );
-    pub type GLDEBUGPROCAMD = extern "system" fn(
-        id: GLuint,
-        category: GLenum,
-        severity: GLenum,
-        length: GLsizei,
-        message: *const GLchar,
-        userParam: *mut GLvoid,
-    );
-    pub type GLVULKANPROCNV = extern "system" fn();
+    {types}
 }}
 
 pub use enums::*;
@@ -676,7 +682,8 @@ impl Gl {{
     }}
 
     {formated_methods}
-}}"#
+}}"#,
+            types = Self::types()
         )?;
 
         Ok(())
