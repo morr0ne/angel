@@ -1,0 +1,3 @@
+[submodule "generator/src/OpenGL-Registry"]
+	path = generator/src/OpenGL-Registry
+	url = https://github.com/KhronosGroup/OpenGL-Registry.git
