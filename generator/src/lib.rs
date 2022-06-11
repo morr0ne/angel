@@ -428,7 +428,14 @@ impl GlRegistry {
 
 impl GlRegistry {
     pub const fn types() -> &'static str {
-        r#"use std::os::raw::*;
+        r#"#[cfg(not(feature = "std"))]
+        use core::ffi::{c_char, c_double, c_float, c_int, c_short, c_uchar, c_uint, c_ushort, c_void};
+        
+        #[cfg(feature = "std")]
+        use std::os::raw::{
+            c_char, c_double, c_float, c_int, c_short, c_uchar, c_uint, c_ushort, c_void,
+        };
+        
         pub type GLvoid = c_void;
         pub type GLbyte = c_char;
         pub type GLubyte = c_uchar;
@@ -542,7 +549,7 @@ impl GlRegistry {
                 // NOTE: Thise needs to be on multiple lines otherwise the formater fricks out. I'd probably be a good idea to report the bug.
                 r#"{command_name}: transmute::<*const c_void, 
                 extern "system" fn({function_parameters}){function_return_type}>
-                (load_pointer(CStr::from_bytes_with_nul_unchecked(b"{command_name}\0"))?)"#,
+                (load_pointer(b"{command_name}\0")?)"#,
                 command_name = gl_command.name,
                 function_parameters = &gl_command
                     .gl_params
@@ -614,23 +621,32 @@ impl GlRegistry {
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::upper_case_acronyms)]
 
-use std::{{error::Error, ffi::CStr, fmt::Display, mem::transmute, os::raw::*}};
+#[cfg(not(feature = "std"))]
+use core::{{
+    ffi::{{c_void, CStr}},
+    fmt::Display,
+    mem::transmute,
+}};
+#[cfg(feature = "std")]
+use std::{{ffi::CStr, fmt::Display, mem::transmute, os::raw::c_void}};
+
 
 #[cfg(all(feature = "tracing", feature = "trace-calls"))]
 use tracing::{{error, trace}};
 
-pub type Result<T, E = LoadError> = std::result::Result<T, E>;
+pub type Result<T, E = LoadError> = core::result::Result<T, E>;
 
 #[derive(Debug)]
 pub struct LoadError {{
-    pub name: String,
+    pub name: &'static str,
     pub pointer: usize,
 }}
 
-impl Error for LoadError {{}}
+#[cfg(feature = "std")]
+impl std::error::Error for LoadError {{}}
 
 impl Display for LoadError {{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {{
         write!(
             f,
             "Failed to load function \"{{}}\", expected a valid pointer instead got {{}}",
@@ -659,13 +675,13 @@ impl Gl {{
     where
         F: FnMut(&CStr) -> *const c_void,
     {{
-        let mut load_pointer = |name: &CStr| -> Result<*const c_void> {{
-            let pointer = loader_function(name);
+        let mut load_pointer = |name: &'static [u8]| -> Result<*const c_void> {{
+            let pointer = loader_function(CStr::from_bytes_with_nul_unchecked(name));
             let pointer_usize = pointer as usize;
 
             if pointer_usize == core::usize::MAX || pointer_usize < 8 {{
                 Err(LoadError {{
-                    name: name.to_string_lossy().to_string(),
+                    name: core::str::from_utf8_unchecked(&name[..name.len() - 1]),
                     pointer: pointer_usize,
                 }})
             }} else {{
