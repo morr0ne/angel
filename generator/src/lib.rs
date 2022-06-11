@@ -507,10 +507,8 @@ impl GlRegistry {
         );
         pub type GLVULKANPROCNV = extern "system" fn();"#
     }
-}
 
-impl Display for GlRegistry {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    pub fn generate(&mut self, api: Api, version: f32, profile: GlProfile) -> String {
         let formated_enums = &self.gl_enums.iter().format_with("\n", |gl_enum, f| {
             let enum_type = if gl_enum.bitmask {
                 "GLbitfield"
@@ -608,8 +606,7 @@ impl Display for GlRegistry {
             ))
         });
 
-        writeln!(
-            f,
+        format!(
             r#"
 #![allow(bad_style)]
 #![allow(unused)]
@@ -684,8 +681,6 @@ impl Gl {{
     {formated_methods}
 }}"#,
             types = Self::types()
-        )?;
-
-        Ok(())
+        )
     }
 }
