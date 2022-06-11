@@ -463,10 +463,10 @@ impl GlRegistry {
         pub type GLhandleARB = *const c_void;
         #[cfg(not(target_os = "macos"))]
         pub type GLhandleARB = c_uint;
-        pub enum __GLsync {{}}
+        pub enum __GLsync {}
         pub type GLsync = *const __GLsync;
-        pub enum _cl_context {{}}
-        pub enum _cl_event {{}}
+        pub enum _cl_context {}
+        pub enum _cl_event {}
         pub type GLvdpauSurfaceNV = GLintptr;
         pub type GLeglClientBufferEXT = *const c_void;
         pub type GLeglImageOES = *const c_void;
