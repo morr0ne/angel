@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use roxmltree::Document;
-use std::{collections::HashSet, fmt::Display, str::FromStr};
+use std::{collections::HashSet, str::FromStr};
 
 /// A list of all keywords reserved by the language.
 const KEYWORDS: [&str; 51] = [
