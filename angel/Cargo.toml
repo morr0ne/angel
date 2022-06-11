@@ -10,3 +10,10 @@ readme = "../README.md"
 documentation = "https://docs.rs/angel"
 
 [dependencies]
+tracing = { version = "0.1.34", optional = true, default-features = false }
+
+[features]
+default = ["std"]
+std = ["tracing?/std"]
+trace-errors = ["dep:tracing"]
+trace-calls = ["dep:tracing"]
