@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 thiserror = "1.0.37"
-roxmltree = "0.15.0"
+roxmltree = "0.15.1"
 itertools = "0.10.5"
 color-eyre = "0.6.2"
 clap = { version = "4.0.17", default-features = false, features = ["help", "usage", "wrap_help", "derive", "std", "color", "error-context"] }
