@@ -8,3 +8,5 @@ thiserror = "1.0.37"
 roxmltree = "0.15.0"
 itertools = "0.10.5"
 color-eyre = "0.6.2"
+clap = { version = "4.0.17", default-features = false, features = ["help", "usage", "wrap_help", "derive", "std", "color", "error-context"] }
+reqwest = { version = "0.11.12", default-features = false, features = ["native-tls", "blocking"] }
