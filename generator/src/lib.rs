@@ -83,6 +83,7 @@ pub struct GlEnum {
     pub name: String,
     pub value: String,
     pub bitmask: bool,
+    pub group: Option<String>,
 }
 
 pub struct GlCommand {
@@ -152,11 +153,13 @@ impl GlRegistry {
                             if gl_enum.tag_name().name() == "enum" {
                                 let name = gl_enum.attribute("name").unwrap().to_string();
                                 let value = gl_enum.attribute("value").unwrap().to_string();
+                                let group = gl_enum.attribute("group").map(|s| s.to_string());
 
                                 gl_enums.push(GlEnum {
                                     name,
                                     value,
                                     bitmask,
+                                    group,
                                 });
                             }
                         }
@@ -616,7 +619,6 @@ impl GlRegistry {
         format!(
             r#"
 #![allow(bad_style)]
-#![allow(unused)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::upper_case_acronyms)]
