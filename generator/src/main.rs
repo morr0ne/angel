@@ -48,6 +48,8 @@ fn main() -> Result<()> {
     src_dir.push("angel/src");
     let file_path = src_dir.join("gl.rs");
 
+    println!("Writing to {}", file_path.display());
+
     fs::write(
         &file_path,
         Generator::generate(&gl_registry, Api::Gl, 4.6, GlProfile::Core),
