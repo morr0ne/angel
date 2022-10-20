@@ -1,5 +1,8 @@
 use color_eyre::Result;
-use generator::{Api, GlProfile, GlRegistry};
+use generator::{
+    generator::Generator,
+    parser::{Api, GlProfile, GlRegistry},
+};
 use std::{fs, path::PathBuf, process::Command};
 
 const GL_XML: &str = include_str!("OpenGL-Registry/xml/gl.xml");
@@ -17,7 +20,7 @@ fn main() -> Result<()> {
 
     fs::write(
         &file_path,
-        gl_registry.generate(Api::Gl, 4.6, GlProfile::Core),
+        Generator::generate(&gl_registry, Api::Gl, 4.6, GlProfile::Core),
     )?;
 
     let rustfmt_status = Command::new("rustfmt")
