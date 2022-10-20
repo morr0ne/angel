@@ -1,7 +1,8 @@
 [package]
 name = "generator"
-version = "0.1.0"
+version = "0.0.0"
 edition = "2021"
+publish = false
 
 [dependencies]
 clap = { version = "4.0.17", default-features = false, features = ["help", "usage", "wrap_help", "derive", "std", "color", "error-context"] }
