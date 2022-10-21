@@ -115,10 +115,12 @@ pub struct GlExtension {}
 #[derive(Debug, thiserror::Error)]
 pub enum ParseError {
     #[error("")]
+    InvalidDocument,
+    #[error("")]
     Profile(#[from] GlProfileFromStrError),
     #[error("")]
     Api(#[from] ApiFromStrError),
-    #[error("")]
+    #[error("Failed to parse registry file")]
     Xml(#[from] roxmltree::Error),
 }
 
@@ -131,7 +133,12 @@ impl GlRegistry {
         let mut gl_features = Vec::new();
         let mut gl_extensions = Vec::new();
 
-        for node in document.root().first_child().unwrap().children() {
+        for node in document
+            .root()
+            .first_child()
+            .ok_or(ParseError::InvalidDocument)?
+            .children()
+        {
             if node.is_element() {
                 match node.tag_name().name() {
                     "enums" => {
