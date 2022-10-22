@@ -1,5 +1,9 @@
+/*
+    DO NOT MANUALLY EDIT THIS FILE.
+    EDITING THIS FILES CAN LEAD TO SAFETY BUGS AND MEMORY CORRUPTION.
+*/
+
 #![allow(bad_style)]
-#![allow(unused)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::upper_case_acronyms)]
