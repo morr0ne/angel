@@ -1,6 +1,6 @@
 use clap::Parser;
 use color_eyre::Result;
-use generator::{
+use angel_generator::{
     generator::Generator,
     parser::{Api, GlProfile, GlRegistry},
 };
