@@ -10,7 +10,7 @@ use std::{
     process::Command,
 };
 
-const GL_XML: &str = include_str!("OpenGL-Registry/xml/gl.xml");
+const GL_XML: &str = include_str!("gl.xml");
 
 /// An overly complicated opengl generator.
 #[derive(Parser)]
