@@ -110,11 +110,18 @@ pub struct GlRequire {
     pub gl_commands: Vec<String>,
 }
 
-pub struct GlExtension {}
+pub struct GlExtension {
+    pub gl_require: Vec<GlExtensionRequire>,
+}
+
+pub struct GlExtensionRequire {
+    pub gl_enums: Vec<String>,
+    pub gl_commands: Vec<String>,
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParseError {
-    #[error("")]
+    #[error("Invalid document")]
     InvalidDocument,
     #[error("")]
     Profile(#[from] GlProfileFromStrError),
@@ -133,257 +140,276 @@ impl GlRegistry {
         let mut gl_features = Vec::new();
         let mut gl_extensions = Vec::new();
 
+        // todo!();
+
         for node in document
-            .root()
-            .first_child()
-            .ok_or(ParseError::InvalidDocument)?
+            .root_element()
             .children()
+            .filter(|node| node.is_element())
         {
-            if node.is_element() {
-                match node.tag_name().name() {
-                    "enums" => {
-                        if let Some(group) = node.attribute("group") {
-                            // TODO: For some reasone nvidia used negative values here, no clue way. I'm fixing this another time.
-                            if group == "TransformFeedbackTokenNV" {
-                                continue;
-                            }
-                        }
-
-                        let bitmask = if let Some(t) = node.attribute("type") {
-                            t == "bitmask"
-                        } else {
-                            false
-                        };
-
-                        for gl_enum in node.children() {
-                            if gl_enum.tag_name().name() == "enum" {
-                                let name = gl_enum.attribute("name").unwrap().to_string();
-                                let value = gl_enum.attribute("value").unwrap().to_string();
-                                let group = gl_enum.attribute("group").map(|s| s.to_string());
-
-                                gl_enums.push(GlEnum {
-                                    name,
-                                    value,
-                                    bitmask,
-                                    group,
-                                });
-                            }
+            match node.tag_name().name() {
+                "enums" => {
+                    if let Some(group) = node.attribute("group") {
+                        // TODO: For some reasone nvidia used negative values here, no clue way. I'm fixing this another time.
+                        if group == "TransformFeedbackTokenNV" {
+                            continue;
                         }
                     }
-                    "commands" => {
-                        for gl_command in node.children() {
-                            if gl_command.tag_name().name() == "command" {
-                                let mut name = None;
-                                let mut gl_params = Vec::new();
-                                let mut return_type = None;
 
-                                for command_attr in gl_command.children() {
-                                    match command_attr.tag_name().name() {
-                                        "proto" => {
-                                            name = Some(
-                                                command_attr
-                                                    .children()
-                                                    .find(|node| node.tag_name().name() == "name")
-                                                    .unwrap()
-                                                    .text()
-                                                    .unwrap()
-                                                    .to_string(),
-                                            );
+                    let bitmask = if let Some(t) = node.attribute("type") {
+                        t == "bitmask"
+                    } else {
+                        false
+                    };
 
-                                            let mut gl_type = if let Some(ptype) = command_attr
-                                                .children()
-                                                .find(|node| node.tag_name().name() == "ptype")
-                                            {
-                                                ptype.text().unwrap().to_string()
-                                            } else {
-                                                "".to_string()
-                                            };
+                    for gl_enum in node.children() {
+                        if gl_enum.tag_name().name() == "enum" {
+                            let name = gl_enum.attribute("name").unwrap().to_string();
+                            let value = gl_enum.attribute("value").unwrap().to_string();
+                            let group = gl_enum.attribute("group").map(|s| s.to_string());
 
-                                            if let Some(text) = command_attr.text() {
-                                                if let "const" = text.trim() {
-                                                    gl_type = format!("*const {}", gl_type);
-                                                }
-                                            }
+                            gl_enums.push(GlEnum {
+                                name,
+                                value,
+                                bitmask,
+                                group,
+                            });
+                        }
+                    }
+                }
+                "commands" => {
+                    for gl_command in node.children() {
+                        if gl_command.tag_name().name() == "command" {
+                            let mut name = None;
+                            let mut gl_params = Vec::new();
+                            let mut return_type = None;
 
-                                            if !gl_type.is_empty() {
-                                                return_type = Some(format!("->{}", gl_type));
-                                            } else {
-                                                return_type = Some(gl_type)
-                                            }
-                                        }
-                                        "param" => {
-                                            let mut name = command_attr
+                            for command_attr in gl_command.children() {
+                                match command_attr.tag_name().name() {
+                                    "proto" => {
+                                        name = Some(
+                                            command_attr
                                                 .children()
                                                 .find(|node| node.tag_name().name() == "name")
                                                 .unwrap()
                                                 .text()
                                                 .unwrap()
-                                                .to_string();
+                                                .to_string(),
+                                        );
 
-                                            if KEYWORDS.contains(&name.as_str()) {
-                                                name = format!("r#{}", name)
+                                        let mut gl_type = if let Some(ptype) = command_attr
+                                            .children()
+                                            .find(|node| node.tag_name().name() == "ptype")
+                                        {
+                                            ptype.text().unwrap().to_string()
+                                        } else {
+                                            "".to_string()
+                                        };
+
+                                        if let Some(text) = command_attr.text() {
+                                            if let "const" = text.trim() {
+                                                gl_type = format!("*const {}", gl_type);
                                             }
+                                        }
 
-                                            let gl_type = if let Some(node) = command_attr
-                                                .children()
-                                                .find(|node| node.tag_name().name() == "ptype")
-                                            {
-                                                let mut gl_type = match node.text().unwrap().trim()
-                                                {
-                                                    "struct _cl_context" => "*mut _cl_context",
-                                                    "struct _cl_event" => "*mut _cl_event",
-                                                    gl_type => gl_type,
-                                                }
-                                                .to_string();
+                                        if !gl_type.is_empty() {
+                                            return_type = Some(format!("->{}", gl_type));
+                                        } else {
+                                            return_type = Some(gl_type)
+                                        }
+                                    }
+                                    "param" => {
+                                        let mut name = command_attr
+                                            .children()
+                                            .find(|node| node.tag_name().name() == "name")
+                                            .unwrap()
+                                            .text()
+                                            .unwrap()
+                                            .to_string();
 
-                                                if let Some(tail) = node.tail() {
-                                                    if tail.trim() == "*" {
-                                                        if let Some(text) = command_attr.text() {
-                                                            if let "const" = text.trim() {
-                                                                gl_type =
-                                                                    format!("*const {}", gl_type);
-                                                            }
-                                                        } else {
-                                                            gl_type = format!("*mut {}", gl_type);
+                                        if KEYWORDS.contains(&name.as_str()) {
+                                            name = format!("r#{}", name)
+                                        }
+
+                                        let gl_type = if let Some(node) = command_attr
+                                            .children()
+                                            .find(|node| node.tag_name().name() == "ptype")
+                                        {
+                                            let mut gl_type = match node.text().unwrap().trim() {
+                                                "struct _cl_context" => "*mut _cl_context",
+                                                "struct _cl_event" => "*mut _cl_event",
+                                                gl_type => gl_type,
+                                            }
+                                            .to_string();
+
+                                            if let Some(tail) = node.tail() {
+                                                if tail.trim() == "*" {
+                                                    if let Some(text) = command_attr.text() {
+                                                        if let "const" = text.trim() {
+                                                            gl_type = format!("*const {}", gl_type);
                                                         }
-                                                    } else if tail.trim() == "*const*" {
-                                                        gl_type =
-                                                            format!("*const *const {}", gl_type);
+                                                    } else {
+                                                        gl_type = format!("*mut {}", gl_type);
                                                     }
+                                                } else if tail.trim() == "*const*" {
+                                                    gl_type = format!("*const *const {}", gl_type);
                                                 }
+                                            }
 
-                                                gl_type
-                                            } else {
-                                                match command_attr.text().unwrap().trim() {
-                                                    "const void *" => "*const c_void",
-                                                    "const void **" | "const void *const*" => {
-                                                        "*const *const c_void"
-                                                    }
-                                                    "void *" => "*mut c_void",
-                                                    "void **" => "*mut *mut c_void",
-                                                    text => panic!(
-                                                        "Couldn't find a valid type\n {}",
-                                                        text
-                                                    ),
+                                            gl_type
+                                        } else {
+                                            match command_attr.text().unwrap().trim() {
+                                                "const void *" => "*const c_void",
+                                                "const void **" | "const void *const*" => {
+                                                    "*const *const c_void"
                                                 }
-                                                .to_string()
-                                            };
+                                                "void *" => "*mut c_void",
+                                                "void **" => "*mut *mut c_void",
+                                                text => {
+                                                    panic!("Couldn't find a valid type\n {}", text)
+                                                }
+                                            }
+                                            .to_string()
+                                        };
 
-                                            gl_params.push(GlParam { name, gl_type })
-                                        }
-                                        "alias" => {}
-                                        "glx" => {}
-                                        "vecequiv" => {}
-                                        _ => {
-                                            // dbg!(name);
-                                        }
+                                        gl_params.push(GlParam { name, gl_type })
                                     }
-                                }
-
-                                gl_commands.push(GlCommand {
-                                    name: name.unwrap(),
-                                    gl_params,
-                                    return_type: return_type.unwrap(),
-                                });
-                            }
-                        }
-                    }
-                    "feature" => {
-                        let api = node.attribute("api").unwrap().parse()?;
-                        let version = node.attribute("number").unwrap().parse().unwrap();
-                        let mut gl_require = Vec::new();
-                        let mut gl_remove = Vec::new();
-
-                        for gl_feature in node.children() {
-                            match gl_feature.tag_name().name() {
-                                "require" => {
-                                    let mut gl_enums = Vec::new();
-                                    let mut gl_commands = Vec::new();
-                                    let api =
-                                        gl_feature.attribute("api").map(|api| api.parse().unwrap());
-                                    let gl_profile = gl_feature
-                                        .attribute("profile")
-                                        .map(|profile| profile.parse().unwrap());
-
-                                    for gl_require in gl_feature.children() {
-                                        match gl_require.tag_name().name() {
-                                            "enum" => {
-                                                let gl_enum = gl_require.attribute("name").unwrap();
-                                                gl_enums.push(gl_enum.to_string());
-                                            }
-                                            "command" => {
-                                                let gl_command =
-                                                    gl_require.attribute("name").unwrap();
-                                                gl_commands.push(gl_command.to_string())
-                                            }
-                                            "type" => {}
-                                            name => {
-                                                if !name.is_empty() {
-                                                    panic!("Unknown req {name}")
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    gl_require.push(GlRequire {
-                                        gl_enums,
-                                        gl_commands,
-                                        gl_profile,
-                                        api,
-                                    })
-                                }
-                                "remove" => {
-                                    let mut gl_enums = Vec::new();
-                                    let mut gl_commands = Vec::new();
-                                    let api =
-                                        gl_feature.attribute("api").map(|api| api.parse().unwrap());
-                                    let gl_profile = gl_feature
-                                        .attribute("profile")
-                                        .map(|profile| profile.parse().unwrap());
-
-                                    for gl_require in gl_feature.children() {
-                                        match gl_require.tag_name().name() {
-                                            "enum" => {
-                                                let gl_enum = gl_require.attribute("name").unwrap();
-                                                gl_enums.push(gl_enum.to_string());
-                                            }
-                                            "command" => {
-                                                let gl_command =
-                                                    gl_require.attribute("name").unwrap();
-                                                gl_commands.push(gl_command.to_string())
-                                            }
-                                            "type" => {}
-                                            name => {
-                                                if !name.is_empty() {
-                                                    panic!("Unknown req {name}")
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    gl_remove.push(GlRequire {
-                                        gl_enums,
-                                        gl_commands,
-                                        gl_profile,
-                                        api,
-                                    })
-                                }
-                                name => {
-                                    if !name.is_empty() {
-                                        panic!("Unknown req {name}")
+                                    "alias" => {}
+                                    "glx" => {}
+                                    "vecequiv" => {}
+                                    _ => {
+                                        // dbg!(name);
                                     }
                                 }
                             }
+
+                            gl_commands.push(GlCommand {
+                                name: name.unwrap(),
+                                gl_params,
+                                return_type: return_type.unwrap(),
+                            });
+                        }
+                    }
+                }
+                "feature" => {
+                    let api = node.attribute("api").unwrap().parse()?;
+                    let version = node.attribute("number").unwrap().parse().unwrap();
+                    let mut gl_require = Vec::new();
+                    let mut gl_remove = Vec::new();
+
+                    for gl_feature in node.children() {
+                        match gl_feature.tag_name().name() {
+                            "require" => {
+                                let mut gl_enums = Vec::new();
+                                let mut gl_commands = Vec::new();
+                                let api =
+                                    gl_feature.attribute("api").map(|api| api.parse().unwrap());
+                                let gl_profile = gl_feature
+                                    .attribute("profile")
+                                    .map(|profile| profile.parse().unwrap());
+
+                                for gl_require in gl_feature.children() {
+                                    match gl_require.tag_name().name() {
+                                        "enum" => {
+                                            let gl_enum = gl_require.attribute("name").unwrap();
+                                            gl_enums.push(gl_enum.to_string());
+                                        }
+                                        "command" => {
+                                            let gl_command = gl_require.attribute("name").unwrap();
+                                            gl_commands.push(gl_command.to_string())
+                                        }
+                                        "type" => {}
+                                        name => {
+                                            if !name.is_empty() {
+                                                panic!("Unknown req {name}")
+                                            }
+                                        }
+                                    }
+                                }
+
+                                gl_require.push(GlRequire {
+                                    gl_enums,
+                                    gl_commands,
+                                    gl_profile,
+                                    api,
+                                })
+                            }
+                            "remove" => {
+                                let mut gl_enums = Vec::new();
+                                let mut gl_commands = Vec::new();
+                                let api =
+                                    gl_feature.attribute("api").map(|api| api.parse().unwrap());
+                                let gl_profile = gl_feature
+                                    .attribute("profile")
+                                    .map(|profile| profile.parse().unwrap());
+
+                                for gl_require in gl_feature.children() {
+                                    match gl_require.tag_name().name() {
+                                        "enum" => {
+                                            let gl_enum = gl_require.attribute("name").unwrap();
+                                            gl_enums.push(gl_enum.to_string());
+                                        }
+                                        "command" => {
+                                            let gl_command = gl_require.attribute("name").unwrap();
+                                            gl_commands.push(gl_command.to_string())
+                                        }
+                                        "type" => {}
+                                        name => {
+                                            if !name.is_empty() {
+                                                panic!("Unknown req {name}")
+                                            }
+                                        }
+                                    }
+                                }
+
+                                gl_remove.push(GlRequire {
+                                    gl_enums,
+                                    gl_commands,
+                                    gl_profile,
+                                    api,
+                                })
+                            }
+                            name => {
+                                if !name.is_empty() {
+                                    panic!("Unknown req {name}")
+                                }
+                            }
+                        }
+                    }
+
+                    gl_features.push(GlFeature {
+                        api,
+                        version,
+                        gl_require,
+                        gl_remove,
+                    })
+                }
+                "extensions" => {
+                    for gl_extension in node.children().filter(|node| node.is_element()) {
+                        if let Some(element) = gl_extension.first_element_child() {
+                            if element.tag_name().name() != "require" {
+                                dbg!(element.tag_name().name());
+                            }
+                        } else {
+                            dbg!(gl_extension.attribute("name").unwrap());
                         }
 
-                        gl_features.push(GlFeature {
-                            api,
-                            version,
-                            gl_require,
-                            gl_remove,
-                        })
+                        // if gl_extension.children().count() == 1 {
+                        // for require in gl_extension.first_element_child().unwrap().children() {
+                        //     match require.tag_name().name() {
+                        //         r => {
+                        //             dbg!(r);
+                        //         }
+                        //     }
+                        // }
+                        // }
                     }
-                    _ => {}
+                }
+                "comment" | "types" => {
+                    // Ignore
+                }
+                _invalid => {
+                    return Err(ParseError::InvalidDocument);
                 }
             }
         }
