@@ -1,8 +1,17 @@
-[workspace]
-members = [
-    "angel",
-    "generator"
-]
+[package]
+name = "angel_generator"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+clap = { version = "4.0.17", default-features = false, features = ["help", "usage", "wrap_help", "derive", "std", "error-context"] }
+color-eyre = "0.6.2"
+itertools = "0.10.5"
+reqwest = { version = "0.11.12", default-features = false, features = ["native-tls", "blocking"] }
+roxmltree = "0.15.1"
+thiserror = "1.0.37"
+toml_edit = "0.15.0"
 
 [profile.release]
 lto = true
